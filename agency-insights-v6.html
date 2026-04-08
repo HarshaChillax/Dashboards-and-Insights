@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Agency Insights Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f4f9;--surface:#ffffff;--surface2:#f7fafd;--border:#e2e8f0;
+  --navy:#1e3a5f;--blue:#2563eb;--blue-l:#dbeafe;--teal:#0891b2;
+  --green:#16a34a;--green-l:#dcfce7;--red:#dc2626;--red-l:#fee2e2;
+  --amber:#d97706;--amber-l:#fef3c7;--purple:#7c3aed;--purple-l:#ede9fe;
+  --text:#1e293b;--text2:#475569;--text3:#94a3b8;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.12);--radius:12px;--radius-sm:8px;
+}
+.dark{
+  --bg:#0f172a;--surface:#1e293b;--surface2:#273447;--border:#334155;
+  --text:#f1f5f9;--text2:#94a3b8;--text3:#64748b;
+  --shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;transition:background .3s,color .3s}
+h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
+
+/* TOPBAR */
+.topbar{background:var(--navy);color:#fff;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.topbar-brand{display:flex;align-items:center;gap:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px}
+.topbar-brand .dot{width:8px;height:8px;border-radius:50%;background:#38bdf8;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.topbar-right{display:flex;align-items:center;gap:8px}
+
+.main{flex:1;padding:16px 20px;max-width:1600px;margin:0 auto;width:100%}
+
+/* CONTROLS */
+.controls{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;align-items:center;justify-content:space-between}
+.controls-right{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.breadcrumb{font-size:13px;color:var(--text2);display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.breadcrumb .bc-link{color:var(--blue);cursor:pointer}.breadcrumb .bc-link:hover{text-decoration:underline}
+.page-title{font-size:20px;font-weight:700;color:var(--text);margin-bottom:0}
+
+/* INPUTS */
+.inp{height:36px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0 12px;background:var(--surface);color:var(--text);font-size:13px;outline:none;transition:border .2s}
+.inp:focus{border-color:var(--blue)}
+input[type="date"].inp{padding:0 8px}
+
+/* BUTTONS */
+.btn{height:36px;padding:0 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:#1d4ed8}
+.btn-outline{background:transparent;color:var(--text2);border:1px solid var(--border)}.btn-outline:hover{background:var(--surface2)}
+.btn-icon{width:36px;height:36px;padding:0;border-radius:var(--radius-sm);background:transparent;border:1px solid var(--border);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:var(--text2);font-size:16px;transition:all .15s}
+.btn-icon:hover{background:var(--surface2)}
+
+/* DATE FILTER GROUP */
+.date-filter-group{display:flex;align-items:center;gap:0;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;background:var(--surface)}
+.date-btn{height:36px;padding:0 14px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--text2);transition:all .15s;border-right:1px solid var(--border);white-space:nowrap}
+.date-btn:last-child{border-right:none}
+.date-btn.active{background:var(--blue);color:#fff}
+.date-btn:hover:not(.active){background:var(--surface2)}
+.custom-date-range{display:none;align-items:center;gap:6px;padding:0 8px;border-top:1px solid var(--border);background:var(--surface2)}
+.custom-date-range.show{display:flex}
+
+/* CARDS */
+.card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow);padding:16px}
+.card-sm{padding:12px 14px}
+
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:16px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;display:flex;flex-direction:column;gap:4px;position:relative;overflow:hidden;box-shadow:var(--shadow);transition:transform .15s,box-shadow .15s}
+.kpi-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi-card.blue::before{background:var(--blue)}.kpi-card.green::before{background:var(--green)}.kpi-card.red::before{background:var(--red)}.kpi-card.amber::before{background:var(--amber)}.kpi-card.teal::before{background:var(--teal)}.kpi-card.purple::before{background:var(--purple)}
+.kpi-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.kpi-icon.blue{background:var(--blue-l);color:var(--blue)}.kpi-icon.green{background:var(--green-l);color:var(--green)}.kpi-icon.red{background:var(--red-l);color:var(--red)}.kpi-icon.amber{background:var(--amber-l);color:var(--amber)}.kpi-icon.teal{background:#cffafe;color:var(--teal)}.kpi-icon.purple{background:var(--purple-l);color:var(--purple)}
+.kpi-value{font-size:20px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:var(--text);line-height:1.2}
+.kpi-label{font-size:11px;color:var(--text2);font-weight:500}
+.kpi-change{font-size:11px;font-weight:600}
+.kpi-change.up{color:var(--green)}.kpi-change.down{color:var(--red)}.kpi-change.flat{color:var(--text3)}
+
+/* SECTION HEADER */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+.section-title{font-size:15px;font-weight:600;color:var(--text)}
+
+/* TABLES */
+.table-wrap{overflow-x:auto;border-radius:var(--radius-sm)}
+/* scrollable table body */
+.table-scroll-body{max-height:420px;overflow-y:auto}
+.table-scroll-body::-webkit-scrollbar{width:6px}
+.table-scroll-body::-webkit-scrollbar-track{background:transparent}
+.table-scroll-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead{position:sticky;top:0;z-index:2}
+thead tr{background:var(--surface2)}
+th{padding:10px 12px;text-align:left;font-weight:600;color:var(--text2);font-size:12px;white-space:nowrap;cursor:pointer;user-select:none;border-bottom:2px solid var(--border)}
+th:hover{color:var(--blue)}
+th .sort-icon{margin-left:4px;opacity:.4;font-size:10px}
+td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text);white-space:nowrap}
+tbody tr:hover{background:var(--surface2)}
+tbody tr:last-child td{border-bottom:none}
+.agency-name-link{color:var(--blue);font-weight:600;cursor:pointer;text-decoration:none}
+.agency-name-link:hover{text-decoration:underline}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600}
+.badge-green{background:var(--green-l);color:var(--green)}.badge-red{background:var(--red-l);color:var(--red)}.badge-amber{background:var(--amber-l);color:var(--amber)}.badge-blue{background:var(--blue-l);color:var(--blue)}.badge-gray{background:var(--border);color:var(--text2)}
+
+/* CHARTS */
+.chart-full{width:100%;margin-bottom:20px}
+.charts-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px}
+.chart-container{position:relative;height:260px}
+.chart-container-lg{position:relative;height:280px}
+
+/* TABS (inline, no border) */
+.tabs-pill{display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px}
+.tab-pill{padding:5px 12px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;border-radius:6px;transition:all .15s;white-space:nowrap}
+.tab-pill.active{background:var(--blue);color:#fff;box-shadow:0 1px 4px rgba(37,99,235,.3)}
+
+/* TREND CHART IN-CARD DATE FILTER */
+.trend-filter{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* COMPARE TOGGLE SWITCH */
+.switch-wrap{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);font-weight:500}
+.switch{position:relative;width:38px;height:22px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:var(--border);border-radius:99px;cursor:pointer;transition:.25s}
+.slider::before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.25s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+input:checked+.slider{background:var(--blue)}
+input:checked+.slider::before{transform:translateX(16px)}
+
+/* COMPARE TABLE */
+.compare-grid{display:grid;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
+.compare-header{display:grid;background:var(--surface2);font-size:12px;font-weight:600;color:var(--text2);padding:8px 12px}
+.compare-row{display:grid;background:var(--surface);padding:10px 12px;align-items:center;font-size:13px}
+.compare-row:hover{background:var(--surface2)}
+.compare-bar-wrap{background:var(--border);border-radius:99px;height:6px;overflow:hidden;margin-top:3px}
+.compare-bar{height:100%;border-radius:99px;transition:width .5s ease}
+
+/* SCROLLABLE TABLE CONTAINER */
+.scrollable-table-wrap{overflow-x:auto}
+.scrollable-table-wrap .table-scroll-body{max-height:440px;overflow-y:auto}
+
+/* ALERTS */
+.alert-item{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:var(--radius-sm);margin-bottom:8px;font-size:13px}
+.alert-item.critical{background:var(--red-l);border-left:3px solid var(--red)}
+.alert-item.warning{background:var(--amber-l);border-left:3px solid var(--amber)}
+.alert-item.info{background:var(--blue-l);border-left:3px solid var(--blue)}
+.alert-icon{font-size:15px;margin-top:1px;flex-shrink:0}
+
+/* AI INSIGHTS */
+.insight-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.insight-item:last-child{border-bottom:none}
+.insight-bullet{width:8px;height:8px;border-radius:50%;background:var(--blue);flex-shrink:0;margin-top:6px}
+.insight-text{font-size:13px;color:var(--text2);line-height:1.6}
+
+/* RANK */
+.rank-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.rank-item:last-child{border-bottom:none}
+.rank-num{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.rank-num.gold{background:#fef3c7;color:#92400e}.rank-num.silver{background:#f1f5f9;color:#475569}.rank-num.bronze{background:#fed7aa;color:#92400e}.rank-num.blue-r{background:var(--blue-l);color:var(--blue)}.rank-num.red-r{background:var(--red-l);color:var(--red)}
+.rank-info{flex:1;min-width:0}
+.rank-name{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rank-sub{font-size:11px;color:var(--text2)}
+.rank-val{font-weight:700;font-size:14px;color:var(--text);font-family:'Space Grotesk',sans-serif}
+
+/* FUNNEL */
+.funnel-bar{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.funnel-label{width:80px;font-size:12px;color:var(--text2);text-align:right;flex-shrink:0}
+.funnel-track{flex:1;background:var(--border);border-radius:99px;height:24px;overflow:hidden}
+.funnel-fill{height:100%;border-radius:99px;display:flex;align-items:center;padding-left:12px;font-size:11px;font-weight:700;color:#fff;transition:width .6s ease}
+.funnel-val{width:64px;font-size:12px;font-weight:600;color:var(--text);font-family:'Space Grotesk',sans-serif;text-align:right}
+
+/* CAMPAIGN TOOLTIP */
+.campaign-cell{position:relative;display:inline-block}
+.campaign-tooltip{
+  display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+  background:var(--navy);color:#fff;padding:8px 12px;border-radius:var(--radius-sm);
+  font-size:11px;white-space:nowrap;z-index:999;min-width:160px;
+  box-shadow:0 4px 16px rgba(0,0,0,.25);pointer-events:none;
+}
+.campaign-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:var(--navy)}
+.campaign-cell:hover .campaign-tooltip{display:block}
+
+/* HEATMAP — prominent full-width */
+.heatmap-table{border-collapse:separate;border-spacing:3px;width:100%}
+.hm-th{font-size:11px;color:var(--text2);font-weight:600;padding:2px 4px;text-align:center;white-space:nowrap;min-width:42px}
+.hm-th-agent{font-size:11px;color:var(--text2);font-weight:600;padding:2px 8px;text-align:left;white-space:nowrap;min-width:100px}
+.hm-td-agent{font-size:12px;font-weight:600;color:var(--text);padding:2px 8px;white-space:nowrap}
+.hm-td{width:42px;height:32px;border-radius:4px;cursor:pointer;position:relative;transition:transform .1s,box-shadow .1s}
+.hm-td:hover{transform:scale(1.15);box-shadow:0 2px 8px rgba(0,0,0,.2);z-index:10}
+/* Tooltip */
+.hm-tooltip{position:fixed;background:var(--navy);color:#fff;padding:8px 12px;border-radius:var(--radius-sm);font-size:12px;pointer-events:none;z-index:9999;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.25);display:none;line-height:1.6}
+
+/* SHIFT */
+.shift-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.shift-card{padding:14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface2)}
+.shift-val{font-size:20px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:var(--text)}
+.shift-label{font-size:12px;color:var(--text2)}
+
+/* GRID LAYOUTS */
+.two-col{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:20px}
+.two-col-equal{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px}
+
+/* UTIL */
+.hidden{display:none!important}
+.mb-3{margin-bottom:10px}.mb-4{margin-bottom:14px}.mb-5{margin-bottom:16px}
+.flex{display:flex}.items-center{align-items:center}.gap-2{gap:8px}.gap-3{gap:12px}
+
+@media(max-width:1100px){.two-col,.three-col,.charts-grid-3{grid-template-columns:1fr 1fr}}
+@media(max-width:750px){.two-col,.two-col-equal,.three-col,.charts-grid-3{grid-template-columns:1fr}}
+@media(max-width:600px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.main{padding:12px}}
+</style>
+</head>
+<body>
+<div class="hm-tooltip" id="hm-tooltip"></div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <span style="font-size:22px">📊</span>
+    EngageCloud
+    <span style="opacity:.4;margin:0 4px">|</span>
+    <span id="topbar-title" style="font-weight:400;font-size:15px;opacity:.85">Agency Insights</span>
+    <div class="dot"></div>
+  </div>
+  <div class="topbar-right">
+    <span style="font-size:12px;opacity:.6" id="live-clock"></span>
+    <button class="btn-icon" onclick="toggleDark()" title="Toggle dark mode" style="border-color:rgba(255,255,255,.2);color:#fff">🌙</button>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- ════════════════════════════════════════
+     AGENCY SCREEN
+════════════════════════════════════════ -->
+<div id="agency-screen">
+
+  <!-- GLOBAL HEADER ROW -->
+  <div class="controls">
+    <div><div class="page-title">Agency Insights Dashboard</div></div>
+    <div class="controls-right">
+      <!-- Global Date Filter -->
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <div class="date-filter-group" id="global-date-group">
+          <button class="date-btn" onclick="setGlobalDate('today',this)">Today</button>
+          <button class="date-btn active" onclick="setGlobalDate('7d',this)">Last 7 Days</button>
+          <button class="date-btn" onclick="setGlobalDate('monthly',this)">Monthly</button>
+          <button class="date-btn" onclick="setGlobalDate('custom',this)">Custom ▾</button>
+        </div>
+        <div class="custom-date-range" id="custom-date-range">
+          <label style="font-size:12px;color:var(--text2)">From</label>
+          <input type="date" class="inp" id="date-from" style="height:30px;font-size:12px"/>
+          <label style="font-size:12px;color:var(--text2)">To</label>
+          <input type="date" class="inp" id="date-to" style="height:30px;font-size:12px"/>
+          <button class="btn btn-primary" style="height:30px;font-size:12px" onclick="applyCustomDate()">Apply</button>
+        </div>
+      </div>
+      <input class="inp" type="text" id="agency-search" placeholder="🔍 Search agency…" oninput="filterAgencyTable()" style="width:190px"/>
+      <button class="btn btn-outline" onclick="refreshData()">🔄 Refresh</button>
+      <button class="btn btn-primary" onclick="exportCSV()">⬇ Export</button>
+    </div>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid" id="agency-kpis"></div>
+
+  <!-- AGENCY PERFORMANCE TABLE -->
+  <div class="card mb-5">
+    <div class="section-header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="section-title">Agency Performance</span>
+        <span id="agency-count" class="badge badge-blue"></span>
+      </div>
+      <!-- Compare toggle -->
+      <div class="switch-wrap">
+        <span>Compare Mode</span>
+        <label class="switch">
+          <input type="checkbox" id="compare-toggle" onchange="toggleCompare()"/>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- NORMAL TABLE VIEW -->
+    <div id="normal-table-view">
+      <div class="scrollable-table-wrap">
+        <div class="table-scroll-body">
+          <table id="agency-table">
+            <thead>
+              <tr>
+                <th onclick="sortAgency('name')">Agency <span class="sort-icon">↕</span></th>
+                <th onclick="sortAgency('totalAgents')">Total Agents <span class="sort-icon">↕</span></th>
+                <th onclick="sortAgency('activeAgents')">Active <span class="sort-icon">↕</span></th>
+                <th onclick="sortAgency('calls')">Calls <span class="sort-icon">↕</span></th>
+                <th onclick="sortAgency('connected')">Connected <span class="sort-icon">↕</span></th>
+                <th onclick="sortAgency('missed')">Missed <span class="sort-icon">↕</span></th>
+                <th onclick="sortAgency('dropped')">Dropped <span class="sort-icon">↕</span></th>
+                <th onclick="sortAgency('sales')">Sales <span class="sort-icon">↕</span></th>
+                <th onclick="sortAgency('conversion')">Conv % <span class="sort-icon">↕</span></th>
+                <th onclick="sortAgency('productivity')">Prod % <span class="sort-icon">↕</span></th>
+                <th onclick="sortAgency('loginHours')">Login Hrs <span class="sort-icon">↕</span></th>
+              </tr>
+            </thead>
+            <tbody id="agency-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPARE VIEW -->
+    <div id="compare-view" class="hidden">
+      <!-- Compare sub-controls -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+        <p style="font-size:12px;color:var(--text2);margin:0">Time-series comparison — Calls, Sales &amp; Conversion % per period for each agency. Scroll right to see all periods.</p>
+        <div class="tabs-pill" id="compare-period-tabs">
+          <span class="tab-pill active" onclick="setComparePeriod('7d',this)">Daily (7 Days)</span>
+          <span class="tab-pill" onclick="setComparePeriod('weekly',this)">Weekly</span>
+          <span class="tab-pill" onclick="setComparePeriod('monthly',this)">Monthly</span>
+        </div>
+      </div>
+      <div id="compare-content"></div>
+    </div>
+  </div>
+
+  <!-- TREND CHART: 3-line with own date filter -->
+  <div class="card mb-5">
+    <div class="section-header">
+      <span class="section-title">Performance Trend</span>
+      <div class="trend-filter">
+        <div class="tabs-pill" id="trend-tabs">
+          <span class="tab-pill active" onclick="setTrendPeriod('7d',this)">7 Days</span>
+          <span class="tab-pill" onclick="setTrendPeriod('weekly',this)">Weekly</span>
+          <span class="tab-pill" onclick="setTrendPeriod('monthly',this)">Monthly</span>
+        </div>
+      </div>
+    </div>
+    <div style="position:relative;height:220px"><canvas id="trendChart"></canvas></div>
+  </div>
+
+  <!-- AGENCY COMPARISON BAR CHART — full width, last -->
+  <div class="card mb-5">
+    <div class="section-header">
+      <span class="section-title">Agency Comparison</span>
+      <div class="tabs-pill" id="bar-tabs">
+        <span class="tab-pill active" onclick="switchBarMetric('calls',this)">Calls</span>
+        <span class="tab-pill" onclick="switchBarMetric('sales',this)">Sales</span>
+        <span class="tab-pill" onclick="switchBarMetric('productivity',this)">Productivity %</span>
+      </div>
+    </div>
+    <div class="chart-container-lg" id="bar-chart-wrap"><canvas id="barChart"></canvas></div>
+  </div>
+
+</div><!-- /agency-screen -->
+
+<!-- ════════════════════════════════════════
+     AGENT SCREEN (DRILL-DOWN)
+════════════════════════════════════════ -->
+<div id="agent-screen" class="hidden">
+
+  <div class="breadcrumb mb-3">
+    <span class="bc-link" onclick="goHome()">🏠 Home</span>
+    <span style="color:var(--text3)">›</span>
+    <span class="bc-link" onclick="goHome()">Agency Dashboard</span>
+    <span style="color:var(--text3)">›</span>
+    <span id="agent-bc-agency" style="color:var(--text2)">Agent View</span>
+  </div>
+
+  <div class="controls">
+    <div><div class="page-title" id="agent-page-title">Agent Insights</div></div>
+    <div class="controls-right">
+      <div class="date-filter-group" id="agent-global-date-group">
+        <button class="date-btn active" onclick="setAgentGlobalDate('today',this)">Today</button>
+        <button class="date-btn" onclick="setAgentGlobalDate('7d',this)">Last 7 Days</button>
+        <button class="date-btn" onclick="setAgentGlobalDate('monthly',this)">Monthly</button>
+        <button class="date-btn" onclick="setAgentGlobalDate('custom',this)">Custom ▾</button>
+      </div>
+      <input class="inp" type="text" id="agent-search" placeholder="🔍 Search agent…" oninput="filterAgentTable()" style="width:190px"/>
+      <button class="btn btn-outline" onclick="goHome()">← Back</button>
+      <button class="btn btn-primary" onclick="exportAgentCSV()">⬇ Export</button>
+    </div>
+  </div>
+
+  <!-- 1. AGENT KPI CARDS -->
+  <div class="kpi-grid" id="agent-kpis"></div>
+
+  <!-- 2. AGENT PERFORMANCE TABLE with Compare Mode -->
+  <div class="card mb-5">
+    <div class="section-header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="section-title">Agent Performance</span>
+        <span id="agent-count" class="badge badge-blue"></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="switch-wrap">
+          <span>Compare Mode</span>
+          <label class="switch">
+            <input type="checkbox" id="agent-compare-toggle" onchange="toggleAgentCompare()"/>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- NORMAL TABLE VIEW -->
+    <div id="agent-normal-table-view">
+      <div class="scrollable-table-wrap">
+        <div class="table-scroll-body">
+          <table id="agent-table">
+            <thead>
+              <tr>
+                <th onclick="sortAgent('agentName')">Agent <span class="sort-icon">↕</span></th>
+                <th>Status</th>
+                <th onclick="sortAgent('calls')">Calls <span class="sort-icon">↕</span></th>
+                <th onclick="sortAgent('connected')">Connected <span class="sort-icon">↕</span></th>
+                <th onclick="sortAgent('missed')">Missed <span class="sort-icon">↕</span></th>
+                <th onclick="sortAgent('dropped')">Dropped <span class="sort-icon">↕</span></th>
+                <th onclick="sortAgent('sales')">Sales <span class="sort-icon">↕</span></th>
+                <th onclick="sortAgent('conversion')">Conv % <span class="sort-icon">↕</span></th>
+                <th onclick="sortAgent('productivity')">Prod % <span class="sort-icon">↕</span></th>
+                <th onclick="sortAgent('loginHours')">Login Hrs <span class="sort-icon">↕</span></th>
+                <th onclick="sortAgent('breakTime')">Break Hrs <span class="sort-icon">↕</span></th>
+                <th onclick="sortAgent('idleHours')">Idle Hrs <span class="sort-icon">↕</span></th>
+                <th onclick="sortAgent('dispositionHours')">Disposition Hrs <span class="sort-icon">↕</span></th>
+                <th>Campaigns</th>
+              </tr>
+            </thead>
+            <tbody id="agent-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGENT COMPARE VIEW -->
+    <div id="agent-compare-view" class="hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+        <p style="font-size:12px;color:var(--text2);margin:0">Time-series comparison — Calls, Sales &amp; Conversion % per period for each agent. Scroll right to see all periods.</p>
+        <div class="tabs-pill" id="agent-compare-period-tabs">
+          <span class="tab-pill active" onclick="setAgentComparePeriod('7d',this)">Daily (7 Days)</span>
+          <span class="tab-pill" onclick="setAgentComparePeriod('weekly',this)">Weekly</span>
+          <span class="tab-pill" onclick="setAgentComparePeriod('monthly',this)">Monthly</span>
+        </div>
+      </div>
+      <div id="agent-compare-content"></div>
+    </div>
+  </div>
+
+  <!-- 3. ACTIVITY HEATMAP — full width, prominent -->
+  <div class="card mb-5">
+    <div class="section-header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="section-title">🔥 Activity Heatmap</span>
+        <span style="font-size:11px;color:var(--text3)">Activity intensity per agent across time slots</span>
+      </div>
+      <div class="tabs-pill" id="heatmap-period-tabs">
+        <span class="tab-pill active" onclick="setHeatmapPeriod('today',this)">Today (Hourly)</span>
+        <span class="tab-pill" onclick="setHeatmapPeriod('daily',this)">Daily (7 Days)</span>
+        <span class="tab-pill" onclick="setHeatmapPeriod('weekly',this)">Weekly</span>
+        <span class="tab-pill" onclick="setHeatmapPeriod('monthly',this)">Monthly</span>
+      </div>
+    </div>
+    <div id="heatmap-wrap" style="overflow-x:auto"></div>
+    <!-- Heatmap Legend -->
+    <div style="display:flex;align-items:center;gap:6px;margin-top:12px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--text2);font-weight:500;margin-right:4px">Activity:</span>
+      <div style="display:flex;align-items:center;gap:3px">
+        <span style="font-size:11px;color:var(--text3)">Low</span>
+        <div style="width:16px;height:16px;border-radius:3px;background:#f0fdf4;border:1px solid var(--border)"></div>
+        <div style="width:16px;height:16px;border-radius:3px;background:#bbf7d0"></div>
+        <div style="width:16px;height:16px;border-radius:3px;background:#4ade80"></div>
+        <div style="width:16px;height:16px;border-radius:3px;background:#16a34a"></div>
+        <div style="width:16px;height:16px;border-radius:3px;background:#15803d"></div>
+        <div style="width:16px;height:16px;border-radius:3px;background:#14532d"></div>
+        <span style="font-size:11px;color:var(--text3)">High</span>
+      </div>
+      <span style="font-size:11px;color:var(--text3);margin-left:8px">· Hover a cell to see details</span>
+    </div>
+  </div>
+
+  <!-- 4. HOURLY PERFORMANCE — own period tabs -->
+  <div class="card mb-5">
+    <div class="section-header">
+      <span class="section-title">Hourly Performance</span>
+      <div class="tabs-pill" id="hourly-period-tabs">
+        <span class="tab-pill active" onclick="setHourlyPeriod('today',this)">Today</span>
+        <span class="tab-pill" onclick="setHourlyPeriod('daily',this)">Daily (7 Days)</span>
+        <span class="tab-pill" onclick="setHourlyPeriod('weekly',this)">Weekly</span>
+        <span class="tab-pill" onclick="setHourlyPeriod('monthly',this)">Monthly</span>
+      </div>
+    </div>
+    <div style="position:relative;height:220px"><canvas id="hourlyChart"></canvas></div>
+  </div>
+
+  <!-- 5. BOTTOM ROW: Agent Performance Chart + Campaign Distribution -->
+  <div class="two-col-equal mb-5">
+    <div class="card">
+      <div class="section-header">
+        <span class="section-title">Agent Performance Chart</span>
+        <div class="tabs-pill" id="agent-bar-tabs">
+          <span class="tab-pill active" onclick="switchAgentBar('calls',this)">Calls</span>
+          <span class="tab-pill" onclick="switchAgentBar('sales',this)">Sales</span>
+          <span class="tab-pill" onclick="switchAgentBar('productivity',this)">Prod%</span>
+        </div>
+      </div>
+      <div style="position:relative;height:260px"><canvas id="agentBarChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="section-header"><span class="section-title">Campaign Distribution</span></div>
+      <div style="position:relative;height:260px"><canvas id="campaignChart"></canvas></div>
+    </div>
+  </div>
+
+
+</div><!-- /agent-screen -->
+
+</div><!-- /main -->
+
+<script>
+// ═══════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════
+const CAMPAIGNS=['ACA 2024','P&C Renewal','Auto Insurance','Life Insurance','Medicare Advantage','Home Owners','Commercial','Dental & Vision'];
+const AGENCY_NAMES=['Summit Chicago','Summit Dallas','Summit Miami','Summit Phoenix','Summit Seattle','Summit Atlanta','Summit Boston','Summit Denver','Summit Las Vegas','Summit Portland'];
+const CHART_COLORS=['#2563eb','#0891b2','#16a34a','#d97706','#7c3aed','#dc2626','#059669','#db2777','#ea580c','#65a30d'];
+
+let agencies=[],agentsMap={},currentAgencyId=null;
+let filteredAgencies=[],filteredAgents=[];
+let agencySortKey=null,agencySortDir=1,agentSortKey=null,agentSortDir=1;
+let barChartInst=null,trendChartInst=null,agentBarChartInst=null,hourlyChartInst=null,campaignChartInst=null;
+let barMetric='calls',agentBarMetric='calls',trendPeriod='7d',globalDateMode='7d',comparePeriod='7d';
+
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function randF(a,b,d=1){return parseFloat((Math.random()*(b-a)+a).toFixed(d));}
+
+function generateData(){
+  agencies=[];agentsMap={};
+  AGENCY_NAMES.forEach((name,i)=>{
+    const id='A'+(i+1);
+    const numAgents=rand(12,50);
+    const agents=[];
+    let tC=0,tCo=0,tM=0,tD=0,tS=0,tL=0,tB=0,active=0;
+    for(let j=0;j<numAgents;j++){
+      const calls=rand(40,300);
+      const connected=rand(Math.floor(calls*.4),Math.floor(calls*.85));
+      const dropped=rand(0,Math.floor(calls*.12));
+      const missed=Math.max(0,calls-connected-dropped);
+      const sales=rand(0,Math.floor(connected*.35));
+      const loginHours=randF(4,10);
+      const breakTime=randF(0.5,2);
+      const status=Math.random()>.3?'Online':'Offline';
+      const productivity=Math.min(parseFloat(((connected/loginHours)*100/30).toFixed(1)),99);
+      const conversion=connected>0?parseFloat((sales/connected*100).toFixed(1)):0;
+      const numCampaigns=rand(1,4);
+      const shuffled=[...CAMPAIGNS].sort(()=>Math.random()-.5);
+      const campaigns=shuffled.slice(0,numCampaigns);
+      const campaign=campaigns[0]; // primary campaign for legacy use
+      const idleHours=randF(0.3,2.5);
+      const dispositionHours=randF(0.2,1.5);
+      agents.push({agentId:`AG${i+1}-${j+1}`,agentName:genName(),agencyId:id,status,calls,connected,missed,dropped,sales,loginHours,breakTime,idleHours,dispositionHours,campaign,campaigns,productivity,conversion});
+      tC+=calls;tCo+=connected;tM+=missed;tD+=dropped;tS+=sales;tL+=loginHours;tB+=breakTime;
+      if(status==='Online')active++;
+    }
+    agentsMap[id]=agents;
+    const avgLogin=parseFloat((tL/numAgents).toFixed(1));
+    const prod=Math.min(parseFloat((tCo/numAgents/avgLogin*3.3).toFixed(1)),99);
+    const conv=tCo>0?parseFloat((tS/tCo*100).toFixed(1)):0;
+    const dropRate=tC>0?parseFloat((tD/tC*100).toFixed(1)):0;
+    agencies.push({id,name,totalAgents:numAgents,activeAgents:active,calls:tC,connected:tCo,missed:tM,dropped:tD,sales:tS,conversion:conv,productivity:prod,loginHours:avgLogin,dropRate,alerts:[],status:'Healthy'});
+  });
+  filteredAgencies=[...agencies];
+}
+
+function genName(){
+  const f=['James','Sarah','Michael','Emily','David','Jessica','Chris','Ashley','Ryan','Amanda','John','Laura','Kevin','Megan','Brian','Nicole','Eric','Stephanie','Jason','Rachel'];
+  const l=['Smith','Johnson','Williams','Brown','Jones','Garcia','Martinez','Davis','Wilson','Taylor','Anderson','Thomas','Jackson','White','Harris','Martin','Thompson','Moore','Allen','Clark'];
+  return f[rand(0,f.length-1)]+' '+l[rand(0,l.length-1)];
+}
+
+// ═══════════════════════════════════════════════
+// GLOBAL DATE FILTER
+// ═══════════════════════════════════════════════
+function setGlobalDate(mode,el){
+  globalDateMode=mode;
+  document.querySelectorAll('#global-date-group .date-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  const cr=document.getElementById('custom-date-range');
+  if(mode==='custom'){cr.classList.add('show');return;}
+  cr.classList.remove('show');
+  refreshData();
+}
+function applyCustomDate(){
+  const from=document.getElementById('date-from').value;
+  const to=document.getElementById('date-to').value;
+  if(!from||!to){alert('Please select both dates.');return;}
+  refreshData();
+}
+
+// ═══════════════════════════════════════════════
+// AGENCY KPIs
+// ═══════════════════════════════════════════════
+function renderAgencyKPIs(){
+  const tot=agencies.reduce((a,b)=>({calls:a.calls+b.calls,connected:a.connected+b.connected,missed:a.missed+b.missed,dropped:a.dropped+b.dropped,sales:a.sales+b.sales,totalAgents:a.totalAgents+b.totalAgents,activeAgents:a.activeAgents+b.activeAgents,loginHours:a.loginHours+b.loginHours,productivity:a.productivity+b.productivity}),{calls:0,connected:0,missed:0,dropped:0,sales:0,totalAgents:0,activeAgents:0,loginHours:0,productivity:0});
+  const n=agencies.length;
+  const kpis=[
+    {icon:'🏢',label:'Total Agencies',val:n,color:'blue',change:'+2',dir:'up'},
+    {icon:'👥',label:'Total Agents',val:tot.totalAgents,color:'blue',change:'+5%',dir:'up'},
+    {icon:'✅',label:'Active Agents',val:tot.activeAgents,color:'green',change:'+12%',dir:'up'},
+    {icon:'📞',label:'Total Calls',val:tot.calls.toLocaleString(),color:'teal',change:'+8%',dir:'up'},
+    {icon:'🔗',label:'Connected',val:tot.connected.toLocaleString(),color:'green',change:'+6%',dir:'up'},
+    {icon:'❌',label:'Missed Calls',val:tot.missed.toLocaleString(),color:'red',change:'-3%',dir:'down'},
+    {icon:'📉',label:'Dropped Calls',val:tot.dropped.toLocaleString(),color:'red',change:'+2%',dir:'down'},
+    {icon:'💰',label:'Total Sales',val:tot.sales.toLocaleString(),color:'green',change:'+14%',dir:'up'},
+    {icon:'📈',label:'Conversion Rate',val:(tot.sales/tot.connected*100).toFixed(1)+'%',color:'purple',change:'+1.2%',dir:'up'},
+    {icon:'⚡',label:'Avg Productivity',val:(tot.productivity/n).toFixed(1)+'%',color:'amber',change:'+3%',dir:'up'},
+    {icon:'⏰',label:'Avg Login Hours',val:(tot.loginHours/n).toFixed(1)+'h',color:'teal',change:'0%',dir:'flat'},
+  ];
+  document.getElementById('agency-kpis').innerHTML=kpis.map(k=>`
+    <div class="kpi-card ${k.color}">
+      <div class="kpi-icon ${k.color}">${k.icon}</div>
+      <div class="kpi-value">${k.val}</div>
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-change ${k.dir}">${k.dir==='up'?'▲':k.dir==='down'?'▼':'–'} ${k.change.replace(/[+-]/,'')} vs prev</div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════
+// BAR CHART — full width, adaptive height
+// ═══════════════════════════════════════════════
+function renderBarChart(){
+  if(barChartInst) barChartInst.destroy();
+  const n=agencies.length;
+  // Adaptive height: 36px per agency, min 260, max 520
+  const h=Math.max(260,Math.min(520,n*38));
+  const wrap=document.getElementById('bar-chart-wrap');
+  wrap.style.height=h+'px';
+
+  const labels=agencies.map(a=>a.name.replace('Summit ',''));
+  const data=agencies.map(a=>a[barMetric]);
+  const ctx=document.getElementById('barChart').getContext('2d');
+
+  barChartInst=new Chart(ctx,{
+    type:'bar',
+    data:{labels,datasets:[{
+      label:barMetric.charAt(0).toUpperCase()+barMetric.slice(1),
+      data,
+      backgroundColor:CHART_COLORS.slice(0,n),
+      borderRadius:5,
+      borderSkipped:false,
+    }]},
+    options:{
+      indexAxis:'y',   // horizontal bars — always readable regardless of agency count
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.x.toLocaleString()}`}}},
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:11}}},
+        y:{grid:{display:false},ticks:{font:{size:12},padding:4}},
+      }
+    }
+  });
+}
+
+function switchBarMetric(m,el){
+  barMetric=m;
+  document.querySelectorAll('#bar-tabs .tab-pill').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderBarChart();
+}
+
+// ═══════════════════════════════════════════════
+// TREND CHART — 3 lines with own period filter
+// ═══════════════════════════════════════════════
+function renderTrendChart(){
+  if(trendChartInst) trendChartInst.destroy();
+  let labels=[];
+  if(trendPeriod==='7d'){
+    labels=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  }else if(trendPeriod==='weekly'){
+    labels=['Week 1','Week 2','Week 3','Week 4','Week 5','Week 6','Week 7','Week 8'];
+  }else{
+    labels=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  }
+  const pts=labels.length;
+  const callsData=Array.from({length:pts},()=>rand(800,3500));
+  const salesData=Array.from({length:pts},()=>rand(50,400));
+  const prodData=Array.from({length:pts},()=>randF(45,90));
+
+  const ctx=document.getElementById('trendChart').getContext('2d');
+  trendChartInst=new Chart(ctx,{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Calls',data:callsData,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.08)',fill:true,tension:.4,borderWidth:2,pointRadius:3,yAxisID:'y'},
+      {label:'Sales',data:salesData,borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,.06)',fill:true,tension:.4,borderWidth:2,pointRadius:3,yAxisID:'y'},
+      {label:'Productivity %',data:prodData,borderColor:'#d97706',backgroundColor:'transparent',fill:false,tension:.4,borderWidth:2,pointRadius:3,yAxisID:'y1',borderDash:[5,4]},
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:16,boxWidth:12}}},
+      scales:{
+        y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:11}},title:{display:true,text:'Calls / Sales',font:{size:10},color:'#94a3b8'}},
+        y1:{position:'right',grid:{drawOnChartArea:false},ticks:{font:{size:11},callback:v=>v+'%'},title:{display:true,text:'Productivity %',font:{size:10},color:'#94a3b8'}},
+        x:{grid:{display:false},ticks:{font:{size:11}}}
+      }
+    }
+  });
+}
+
+function setTrendPeriod(p,el){
+  trendPeriod=p;
+  document.querySelectorAll('#trend-tabs .tab-pill').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderTrendChart();
+}
+
+// ═══════════════════════════════════════════════
+// AGENCY TABLE (scrollable, no pagination)
+// ═══════════════════════════════════════════════
+function renderAgencyTable(){
+  const data=filteredAgencies;
+  document.getElementById('agency-count').textContent=`${data.length} agencies`;
+  const tbody=document.getElementById('agency-tbody');
+  tbody.innerHTML=data.map(a=>`
+    <tr>
+      <td><a class="agency-name-link" onclick="drillDown('${a.id}')">${a.name}</a></td>
+      <td>${a.totalAgents}</td>
+      <td>${a.activeAgents} <span style="color:var(--text3);font-size:11px">(${(a.activeAgents/a.totalAgents*100).toFixed(0)}%)</span></td>
+      <td>${a.calls.toLocaleString()}</td>
+      <td>${a.connected.toLocaleString()}</td>
+      <td style="color:var(--amber)">${a.missed.toLocaleString()}</td>
+      <td style="color:var(--red)">${a.dropped.toLocaleString()}</td>
+      <td><strong>${a.sales.toLocaleString()}</strong></td>
+      <td>${a.conversion}%</td>
+      <td>${a.productivity}%</td>
+      <td>${a.loginHours}h</td>
+    </tr>`).join('');
+}
+
+function filterAgencyTable(){
+  const q=document.getElementById('agency-search').value.toLowerCase();
+  filteredAgencies=agencies.filter(a=>a.name.toLowerCase().includes(q));
+  renderAgencyTable();
+  if(document.getElementById('compare-toggle').checked) renderCompare();
+}
+
+function sortAgency(key){
+  if(agencySortKey===key)agencySortDir*=-1;else{agencySortKey=key;agencySortDir=1;}
+  filteredAgencies.sort((a,b)=>typeof a[key]==='string'?a[key].localeCompare(b[key])*agencySortDir:(a[key]-b[key])*agencySortDir);
+  renderAgencyTable();
+}
+
+// ═══════════════════════════════════════════════
+// COMPARE MODE — time-series per agency
+// ═══════════════════════════════════════════════
+function toggleCompare(){
+  const on=document.getElementById('compare-toggle').checked;
+  document.getElementById('normal-table-view').classList.toggle('hidden',on);
+  document.getElementById('compare-view').classList.toggle('hidden',!on);
+  if(on) renderCompare();
+}
+
+function setComparePeriod(p,el){
+  comparePeriod=p;
+  document.querySelectorAll('#compare-period-tabs .tab-pill').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderCompare();
+}
+
+function getComparePeriodLabels(){
+  if(comparePeriod==='7d') return ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  if(comparePeriod==='weekly') return ['Wk 1','Wk 2','Wk 3','Wk 4','Wk 5','Wk 6','Wk 7','Wk 8'];
+  return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+}
+
+// Generate deterministic-ish per-period data for an agency seeded from its totals
+function getAgencyPeriodData(agency, periods){
+  const rows=[];
+  // Distribute agency totals across periods with mild variance
+  const n=periods.length;
+  for(let p=0;p<n;p++){
+    // Weight: slight bell curve peaking mid-week/mid-period
+    const w=0.7+0.6*Math.sin((p/n)*Math.PI);
+    const calls=Math.round((agency.calls/n)*w*(0.75+Math.random()*.5));
+    const connected=Math.round(calls*(0.5+Math.random()*.35));
+    const sales=Math.round(connected*(0.05+Math.random()*.3));
+    const conv=connected>0?parseFloat((sales/connected*100).toFixed(1)):0;
+    rows.push({calls,sales,conv});
+  }
+  return rows;
+}
+
+function renderCompare(){
+  const data=filteredAgencies;
+  const labels=getComparePeriodLabels();
+  const PERIOD_COL_W=110; // px per period group (3 metrics stacked)
+  const AGENCY_COL_W=150; // px for agency name col
+
+  // Build per-agency time series
+  const agencyData=data.map(a=>({agency:a, periods:getAgencyPeriodData(a,labels)}));
+
+  // Find max values per period index for bar scaling
+  const maxCalls=labels.map((_,pi)=>Math.max(...agencyData.map(ad=>ad.periods[pi].calls)));
+  const maxSales=labels.map((_,pi)=>Math.max(...agencyData.map(ad=>ad.periods[pi].sales)));
+  const maxConv=labels.map((_,pi)=>Math.max(...agencyData.map(ad=>ad.periods[pi].conv)));
+
+  // Total cols width: agency col + (periods * period col)
+  const totalW=AGENCY_COL_W + labels.length*PERIOD_COL_W;
+
+  let html=`
+  <div style="overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-sm)">
+    <div style="min-width:${totalW}px">
+
+      <!-- PERIOD HEADER ROW -->
+      <div style="display:flex;background:var(--navy);color:#fff;position:sticky;top:0;z-index:3">
+        <div style="width:${AGENCY_COL_W}px;flex-shrink:0;padding:10px 14px;font-size:12px;font-weight:600;border-right:1px solid rgba(255,255,255,.15)">Agency</div>
+        ${labels.map(l=>`
+          <div style="width:${PERIOD_COL_W}px;flex-shrink:0;padding:8px 6px;text-align:center;font-size:12px;font-weight:600;border-right:1px solid rgba(255,255,255,.12)">
+            ${l}
+            <div style="display:flex;justify-content:space-around;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.15)">
+              <span style="font-size:10px;opacity:.75;font-weight:400">Calls</span>
+              <span style="font-size:10px;opacity:.75;font-weight:400">Sales</span>
+              <span style="font-size:10px;opacity:.75;font-weight:400">Conv%</span>
+            </div>
+          </div>`).join('')}
+      </div>
+
+      <!-- AGENCY ROWS -->
+      ${agencyData.map((ad,i)=>{
+        const col=CHART_COLORS[i%CHART_COLORS.length];
+        const colAlpha=col+'22';
+        return `
+        <div style="display:flex;border-bottom:1px solid var(--border);background:var(--surface)" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='var(--surface)'">
+          <!-- Agency label -->
+          <div style="width:${AGENCY_COL_W}px;flex-shrink:0;padding:10px 14px;border-right:1px solid var(--border);display:flex;align-items:center;gap:8px;position:sticky;left:0;background:inherit;z-index:2">
+            <span style="width:10px;height:10px;border-radius:50%;background:${col};flex-shrink:0;display:inline-block"></span>
+            <span style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ad.agency.name.replace('Summit ','')}</span>
+          </div>
+          <!-- Period cells -->
+          ${ad.periods.map((p,pi)=>{
+            const callPct=(maxCalls[pi]>0?(p.calls/maxCalls[pi]*100):0).toFixed(0);
+            const salesPct=(maxSales[pi]>0?(p.sales/maxSales[pi]*100):0).toFixed(0);
+            const convPct=(maxConv[pi]>0?(p.conv/maxConv[pi]*100):0).toFixed(0);
+            return `
+            <div style="width:${PERIOD_COL_W}px;flex-shrink:0;padding:8px 6px;border-right:1px solid var(--border)">
+              <div style="display:flex;justify-content:space-around;align-items:flex-end;gap:2px;height:52px">
+                <!-- Calls bar -->
+                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1">
+                  <span style="font-size:10px;font-weight:700;color:var(--text);font-family:'Space Grotesk',sans-serif">${p.calls.toLocaleString()}</span>
+                  <div style="width:100%;background:var(--border);border-radius:3px 3px 0 0;height:28px;display:flex;align-items:flex-end;overflow:hidden">
+                    <div style="width:100%;height:${callPct}%;background:${col};border-radius:3px 3px 0 0;min-height:2px;transition:height .4s ease"></div>
+                  </div>
+                </div>
+                <!-- Sales bar -->
+                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1">
+                  <span style="font-size:10px;font-weight:700;color:var(--text);font-family:'Space Grotesk',sans-serif">${p.sales}</span>
+                  <div style="width:100%;background:var(--border);border-radius:3px 3px 0 0;height:28px;display:flex;align-items:flex-end;overflow:hidden">
+                    <div style="width:100%;height:${salesPct}%;background:${col};opacity:.75;border-radius:3px 3px 0 0;min-height:2px;transition:height .4s ease"></div>
+                  </div>
+                </div>
+                <!-- Conv% bar -->
+                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1">
+                  <span style="font-size:10px;font-weight:700;color:var(--text);font-family:'Space Grotesk',sans-serif">${p.conv}%</span>
+                  <div style="width:100%;background:var(--border);border-radius:3px 3px 0 0;height:28px;display:flex;align-items:flex-end;overflow:hidden">
+                    <div style="width:100%;height:${convPct}%;background:${col};opacity:.5;border-radius:3px 3px 0 0;min-height:2px;transition:height .4s ease"></div>
+                  </div>
+                </div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`;
+      }).join('')}
+
+      <!-- LEGEND FOOTER -->
+      <div style="display:flex;align-items:center;gap:20px;padding:10px 14px;background:var(--surface2);border-top:1px solid var(--border);font-size:11px;color:var(--text2)">
+        <span style="font-weight:600">Legend:</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;background:#334155;border-radius:2px;display:inline-block;opacity:1"></span> Calls (full opacity)</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;background:#334155;border-radius:2px;display:inline-block;opacity:.7"></span> Sales (75% opacity)</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;background:#334155;border-radius:2px;display:inline-block;opacity:.45"></span> Conv % (50% opacity)</span>
+        <span style="margin-left:auto;color:var(--text3)">Bar height = relative max within each period</span>
+      </div>
+
+    </div>
+  </div>`;
+
+  document.getElementById('compare-content').innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════
+// AGENT DRILL-DOWN
+// ═══════════════════════════════════════════════
+function drillDown(agencyId){
+  currentAgencyId=agencyId;
+  const agency=agencies.find(a=>a.id===agencyId);
+  document.getElementById('topbar-title').textContent=agency.name+' – Agents';
+  document.getElementById('agent-bc-agency').textContent=agency.name;
+  document.getElementById('agent-page-title').textContent=agency.name+' – Agent Insights';
+  document.getElementById('agency-screen').classList.add('hidden');
+  document.getElementById('agent-screen').classList.remove('hidden');
+  filteredAgents=[...agentsMap[agencyId]];
+  agentSortKey=null;
+  agentComparePeriod='7d';
+  heatmapPeriod='today';
+  hourlyPeriod='today';
+  // reset compare toggle
+  document.getElementById('agent-compare-toggle').checked=false;
+  document.getElementById('agent-normal-table-view').classList.remove('hidden');
+  document.getElementById('agent-compare-view').classList.add('hidden');
+  renderAgentKPIs(agency,agentsMap[agencyId]);
+  renderAgentTable();
+  renderHeatmap();
+  renderHourlyChart();
+  renderAgentBarChart();
+  renderCampaignChart();
+  window.scrollTo(0,0);
+}
+
+function goHome(){
+  document.getElementById('topbar-title').textContent='Agency Insights';
+  document.getElementById('agency-screen').classList.remove('hidden');
+  document.getElementById('agent-screen').classList.add('hidden');
+  currentAgencyId=null;
+}
+
+function renderAgentKPIs(agency,agents){
+  const tC=agents.reduce((s,a)=>s+a.calls,0);
+  const tCo=agents.reduce((s,a)=>s+a.connected,0);
+  const tM=agents.reduce((s,a)=>s+a.missed,0);
+  const tD=agents.reduce((s,a)=>s+a.dropped,0);
+  const tS=agents.reduce((s,a)=>s+a.sales,0);
+  const tL=agents.reduce((s,a)=>s+a.loginHours,0);
+  const tB=agents.reduce((s,a)=>s+a.breakTime,0);
+  const tI=agents.reduce((s,a)=>s+a.idleHours,0);
+  const tDp=agents.reduce((s,a)=>s+a.dispositionHours,0);
+  const active=agents.filter(a=>a.status==='Online').length;
+  const avgProd=(agents.reduce((s,a)=>s+a.productivity,0)/agents.length).toFixed(1);
+  const avgConv=tCo>0?(tS/tCo*100).toFixed(1):0;
+  const n=agents.length;
+  const kpis=[
+    {icon:'👥',label:'Total Agents',    val:n,                              color:'blue'},
+    {icon:'✅',label:'Active Now',       val:active,                         color:'green'},
+    {icon:'📞',label:'Total Calls',      val:tC.toLocaleString(),            color:'teal'},
+    {icon:'🔗',label:'Connected',        val:tCo.toLocaleString(),           color:'green'},
+    {icon:'❌',label:'Missed Calls',     val:tM.toLocaleString(),            color:'red'},
+    {icon:'📉',label:'Dropped Calls',    val:tD.toLocaleString(),            color:'red'},
+    {icon:'💰',label:'Sales',            val:tS.toLocaleString(),            color:'purple'},
+    {icon:'📈',label:'Conversion Rate',  val:avgConv+'%',                    color:'purple'},
+    {icon:'⚡',label:'Avg Productivity', val:avgProd+'%',                    color:'amber'},
+    {icon:'⏰',label:'Avg Login Hrs',    val:(tL/n).toFixed(1)+'h',         color:'teal'},
+    {icon:'🪑',label:'Avg Idle Hrs',     val:(tI/n).toFixed(1)+'h',         color:'amber'},
+    {icon:'📋',label:'Avg Disposition',  val:(tDp/n).toFixed(1)+'h',        color:'blue'},
+  ];
+  document.getElementById('agent-kpis').innerHTML=kpis.map(k=>`
+    <div class="kpi-card ${k.color}">
+      <div class="kpi-icon ${k.color}">${k.icon}</div>
+      <div class="kpi-value">${k.val}</div>
+      <div class="kpi-label">${k.label}</div>
+    </div>`).join('');
+}
+
+function renderAgentTable(){
+  const data=filteredAgents;
+  document.getElementById('agent-count').textContent=`${data.length} agents`;
+  const tbody=document.getElementById('agent-tbody');
+  tbody.innerHTML=data.map(a=>{
+    // Campaigns tooltip
+    const primary=a.campaigns[0];
+    const extra=a.campaigns.length-1;
+    const allCampsHtml=a.campaigns.map(c=>`<div style="padding:2px 0;border-bottom:1px solid rgba(255,255,255,.1);font-size:11px">${c}</div>`).join('');
+    const campaignCell=`
+      <div class="campaign-cell">
+        <span class="badge badge-blue" style="font-size:10px;cursor:default">${primary}${extra>0?` <span style="opacity:.7">+${extra}</span>`:''}</span>
+        <div class="campaign-tooltip">${allCampsHtml}</div>
+      </div>`;
+    return `<tr>
+      <td><strong>${a.agentName}</strong></td>
+      <td><span class="badge ${a.status==='Online'?'badge-green':'badge-gray'}">${a.status}</span></td>
+      <td>${a.calls}</td>
+      <td>${a.connected}</td>
+      <td style="color:var(--amber)">${a.missed}</td>
+      <td style="color:var(--red)">${a.dropped}</td>
+      <td><strong>${a.sales}</strong></td>
+      <td>${a.conversion}%</td>
+      <td>${a.productivity}%</td>
+      <td>${a.loginHours}h</td>
+      <td>${a.breakTime}h</td>
+      <td style="color:var(--amber)">${a.idleHours}h</td>
+      <td>${a.dispositionHours}h</td>
+      <td>${campaignCell}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterAgentTable(){
+  const q=document.getElementById('agent-search').value.toLowerCase();
+  filteredAgents=agentsMap[currentAgencyId].filter(a=>
+    a.agentName.toLowerCase().includes(q)||
+    a.campaigns.some(c=>c.toLowerCase().includes(q))
+  );
+  renderAgentTable();
+  if(document.getElementById('agent-compare-toggle').checked) renderAgentCompare();
+}
+
+function sortAgent(key){
+  if(agentSortKey===key)agentSortDir*=-1;else{agentSortKey=key;agentSortDir=1;}
+  filteredAgents.sort((a,b)=>typeof a[key]==='string'?a[key].localeCompare(b[key])*agentSortDir:(a[key]-b[key])*agentSortDir);
+  renderAgentTable();
+}
+
+// ─── Agent bar chart (standalone) ───────────────
+function renderAgentBarChart(){
+  if(!currentAgencyId)return;
+  const agents=agentsMap[currentAgencyId];
+  const m=agentBarMetric;
+  const sorted=[...agents].sort((a,b)=>b[m]-a[m]).slice(0,15);
+  if(agentBarChartInst)agentBarChartInst.destroy();
+  agentBarChartInst=new Chart(document.getElementById('agentBarChart').getContext('2d'),{
+    type:'bar',
+    data:{
+      labels:sorted.map(a=>a.agentName.split(' ')[0]+' '+a.agentName.split(' ')[1][0]+'.'),
+      datasets:[{label:m,data:sorted.map(a=>a[m]),backgroundColor:CHART_COLORS[0],borderRadius:4,borderSkipped:false}]
+    },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:10}},grid:{display:false}}}
+    }
+  });
+}
+
+function switchAgentBar(m,el){
+  agentBarMetric=m;
+  document.querySelectorAll('#agent-bar-tabs .tab-pill').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderAgentBarChart();
+}
+
+// ─── Campaign chart ──────────────────────────────
+function renderCampaignChart(){
+  if(!currentAgencyId)return;
+  const agents=agentsMap[currentAgencyId];
+  // Count across all campaigns each agent belongs to
+  const cc={};
+  agents.forEach(a=>a.campaigns.forEach(c=>{cc[c]=(cc[c]||0)+1;}));
+  const labels=Object.keys(cc),vals=Object.values(cc);
+  if(campaignChartInst)campaignChartInst.destroy();
+  campaignChartInst=new Chart(document.getElementById('campaignChart').getContext('2d'),{
+    type:'doughnut',
+    data:{labels,datasets:[{data:vals,backgroundColor:CHART_COLORS.slice(0,labels.length),borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:10,boxWidth:10}}}}
+  });
+}
+
+// ─── Hourly chart with period tabs ──────────────
+let hourlyPeriod='today';
+function setHourlyPeriod(p,el){
+  hourlyPeriod=p;
+  document.querySelectorAll('#hourly-period-tabs .tab-pill').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderHourlyChart();
+}
+function renderHourlyChart(){
+  let labels=[];
+  if(hourlyPeriod==='today')       labels=['8AM','9AM','10AM','11AM','12PM','1PM','2PM','3PM','4PM','5PM','6PM','7PM'];
+  else if(hourlyPeriod==='daily')  labels=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  else if(hourlyPeriod==='weekly') labels=['Wk 1','Wk 2','Wk 3','Wk 4','Wk 5','Wk 6','Wk 7','Wk 8'];
+  else                             labels=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const pts=labels.length;
+  const callsData=Array.from({length:pts},()=>rand(20,120));
+  const salesData=Array.from({length:pts},()=>rand(2,22));
+  if(hourlyChartInst)hourlyChartInst.destroy();
+  hourlyChartInst=new Chart(document.getElementById('hourlyChart').getContext('2d'),{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Calls',data:callsData,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.07)',fill:true,tension:.4,borderWidth:2,yAxisID:'y',pointRadius:3},
+      {label:'Sales',data:salesData,borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,.05)',fill:true,tension:.4,borderWidth:2,yAxisID:'y1',pointRadius:3},
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{font:{size:10},padding:10,boxWidth:10}}},
+      scales:{
+        y:{ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,.04)'},title:{display:true,text:'Calls',font:{size:10},color:'#94a3b8'}},
+        y1:{position:'right',grid:{drawOnChartArea:false},ticks:{font:{size:10}},title:{display:true,text:'Sales',font:{size:10},color:'#94a3b8'}},
+        x:{ticks:{font:{size:10}},grid:{display:false}}
+      }
+    }
+  });
+}
+
+// ─── Heatmap with period tabs ────────────────────
+let heatmapPeriod='today';
+const HM_COLORS=['#f0fdf4','#bbf7d0','#4ade80','#16a34a','#15803d','#14532d'];
+const HM_TEXT   =['#64748b','#166534','#fff','#fff','#fff','#fff'];
+
+function setHeatmapPeriod(p,el){
+  heatmapPeriod=p;
+  document.querySelectorAll('#heatmap-period-tabs .tab-pill').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderHeatmap();
+}
+
+function renderHeatmap(){
+  if(!currentAgencyId)return;
+  const agents=agentsMap[currentAgencyId];
+
+  let cols=[];
+  if(heatmapPeriod==='today')       cols=['8AM','9AM','10AM','11AM','12PM','1PM','2PM','3PM','4PM','5PM','6PM','7PM'];
+  else if(heatmapPeriod==='daily')  cols=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  else if(heatmapPeriod==='weekly') cols=['Wk 1','Wk 2','Wk 3','Wk 4','Wk 5','Wk 6','Wk 7','Wk 8'];
+  else                              cols=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // Build value matrix: agents × cols
+  // Value 0-5 representing activity quintile
+  const matrix=agents.map(a=>{
+    // Seed variance per agent using their login hours as a base tendency
+    const baseTendency=Math.min(5,Math.floor(a.loginHours/2));
+    return cols.map(()=>{
+      const v=Math.max(0,Math.min(5,baseTendency+rand(-2,2)));
+      const callsInSlot=Math.round(a.calls/cols.length*(0.5+v/5));
+      const salesInSlot=Math.round(a.sales/cols.length*(0.5+v/5));
+      return {v,calls:callsInSlot,sales:salesInSlot};
+    });
+  });
+
+  // Build table HTML
+  let html=`<table class="heatmap-table">
+    <thead><tr>
+      <th class="hm-th-agent">Agent</th>
+      ${cols.map(c=>`<th class="hm-th">${c}</th>`).join('')}
+      <th class="hm-th" style="min-width:50px">Avg</th>
+    </tr></thead>
+    <tbody>`;
+
+  agents.forEach((a,ai)=>{
+    const row=matrix[ai];
+    const avg=(row.reduce((s,c)=>s+c.v,0)/row.length);
+    const avgV=Math.round(avg);
+    html+=`<tr>
+      <td class="hm-td-agent">${a.agentName}</td>
+      ${row.map((cell,ci)=>`
+        <td class="hm-td"
+          style="background:${HM_COLORS[cell.v]}"
+          onmouseenter="showHmTooltip(event,'${a.agentName}','${cols[ci]}',${cell.calls},${cell.sales},${cell.v})"
+          onmouseleave="hideHmTooltip()">
+        </td>`).join('')}
+      <td style="text-align:center;padding:0">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:38px;height:28px;border-radius:4px;font-size:10px;font-weight:700;background:${HM_COLORS[avgV]};color:${HM_TEXT[avgV]}">${avg.toFixed(1)}</span>
+      </td>
+    </tr>`;
+  });
+
+  html+='</tbody></table>';
+  document.getElementById('heatmap-wrap').innerHTML=html;
+}
+
+function showHmTooltip(e,agent,period,calls,sales,level){
+  const tip=document.getElementById('hm-tooltip');
+  const intensity=['None','Low','Moderate','Active','High','Peak'];
+  tip.innerHTML=`<div style="font-weight:600;margin-bottom:4px">${agent} — ${period}</div>
+    <div>📞 Calls: <strong>${calls}</strong></div>
+    <div>💰 Sales: <strong>${sales}</strong></div>
+    <div>⚡ Activity: <strong>${intensity[level]}</strong></div>`;
+  tip.style.display='block';
+  tip.style.left=(e.clientX+14)+'px';
+  tip.style.top=(e.clientY-10)+'px';
+}
+function hideHmTooltip(){document.getElementById('hm-tooltip').style.display='none';}
+// Keep tooltip tracking cursor
+document.addEventListener('mousemove',e=>{
+  const tip=document.getElementById('hm-tooltip');
+  if(tip.style.display==='block'){tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-10)+'px';}
+});
+
+// ─── Agent Compare Mode ──────────────────────────
+let agentComparePeriod='7d';
+function toggleAgentCompare(){
+  const on=document.getElementById('agent-compare-toggle').checked;
+  document.getElementById('agent-normal-table-view').classList.toggle('hidden',on);
+  document.getElementById('agent-compare-view').classList.toggle('hidden',!on);
+  if(on) renderAgentCompare();
+}
+function setAgentComparePeriod(p,el){
+  agentComparePeriod=p;
+  document.querySelectorAll('#agent-compare-period-tabs .tab-pill').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderAgentCompare();
+}
+function getAgentComparePeriodLabels(){
+  if(agentComparePeriod==='7d')    return ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  if(agentComparePeriod==='weekly')return ['Wk 1','Wk 2','Wk 3','Wk 4','Wk 5','Wk 6','Wk 7','Wk 8'];
+  return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+}
+function renderAgentCompare(){
+  const data=filteredAgents;
+  const labels=getAgentComparePeriodLabels();
+  const AGENT_COL_W=160, PERIOD_COL_W=110;
+  const totalW=AGENT_COL_W+labels.length*PERIOD_COL_W;
+
+  // Generate per-period data per agent
+  const agentData=data.map(a=>{
+    const n=labels.length;
+    return {agent:a,periods:labels.map(()=>{
+      const calls=Math.round(a.calls/n*(0.6+Math.random()*.8));
+      const connected=Math.round(calls*(0.45+Math.random()*.4));
+      const sales=Math.round(connected*(0.04+Math.random()*.28));
+      const conv=connected>0?parseFloat((sales/connected*100).toFixed(1)):0;
+      return {calls,sales,conv};
+    })};
+  });
+
+  const maxCalls=labels.map((_,pi)=>Math.max(1,...agentData.map(ad=>ad.periods[pi].calls)));
+  const maxSales=labels.map((_,pi)=>Math.max(1,...agentData.map(ad=>ad.periods[pi].sales)));
+  const maxConv =labels.map((_,pi)=>Math.max(1,...agentData.map(ad=>ad.periods[pi].conv)));
+
+  let html=`<div style="overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-sm)">
+    <div style="min-width:${totalW}px">
+      <div style="display:flex;background:var(--navy);color:#fff;position:sticky;top:0;z-index:3">
+        <div style="width:${AGENT_COL_W}px;flex-shrink:0;padding:10px 14px;font-size:12px;font-weight:600;border-right:1px solid rgba(255,255,255,.15)">Agent</div>
+        ${labels.map(l=>`<div style="width:${PERIOD_COL_W}px;flex-shrink:0;padding:8px 6px;text-align:center;font-size:12px;font-weight:600;border-right:1px solid rgba(255,255,255,.12)">
+          ${l}
+          <div style="display:flex;justify-content:space-around;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.15)">
+            <span style="font-size:10px;opacity:.75;font-weight:400">Calls</span>
+            <span style="font-size:10px;opacity:.75;font-weight:400">Sales</span>
+            <span style="font-size:10px;opacity:.75;font-weight:400">Conv%</span>
+          </div>
+        </div>`).join('')}
+      </div>
+      ${agentData.map((ad,i)=>{
+        const col=CHART_COLORS[i%CHART_COLORS.length];
+        return `<div style="display:flex;border-bottom:1px solid var(--border);background:var(--surface)" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='var(--surface)'">
+          <div style="width:${AGENT_COL_W}px;flex-shrink:0;padding:8px 14px;border-right:1px solid var(--border);display:flex;align-items:center;gap:8px;position:sticky;left:0;background:inherit;z-index:2">
+            <span style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0;display:inline-block"></span>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px">${ad.agent.agentName}</div>
+              <div style="font-size:10px;color:var(--text3)">${ad.agent.productivity}% prod</div>
+            </div>
+          </div>
+          ${ad.periods.map((p,pi)=>{
+            const cP=(p.calls/maxCalls[pi]*100).toFixed(0);
+            const sP=(p.sales/maxSales[pi]*100).toFixed(0);
+            const vP=(p.conv/maxConv[pi]*100).toFixed(0);
+            return `<div style="width:${PERIOD_COL_W}px;flex-shrink:0;padding:6px;border-right:1px solid var(--border)">
+              <div style="display:flex;justify-content:space-around;align-items:flex-end;gap:2px;height:52px">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1">
+                  <span style="font-size:10px;font-weight:700;color:var(--text);font-family:'Space Grotesk',sans-serif">${p.calls}</span>
+                  <div style="width:100%;background:var(--border);border-radius:3px 3px 0 0;height:28px;display:flex;align-items:flex-end;overflow:hidden">
+                    <div style="width:100%;height:${cP}%;background:${col};border-radius:3px 3px 0 0;min-height:2px"></div>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1">
+                  <span style="font-size:10px;font-weight:700;color:var(--text);font-family:'Space Grotesk',sans-serif">${p.sales}</span>
+                  <div style="width:100%;background:var(--border);border-radius:3px 3px 0 0;height:28px;display:flex;align-items:flex-end;overflow:hidden">
+                    <div style="width:100%;height:${sP}%;background:${col};opacity:.75;border-radius:3px 3px 0 0;min-height:2px"></div>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1">
+                  <span style="font-size:10px;font-weight:700;color:var(--text);font-family:'Space Grotesk',sans-serif">${p.conv}%</span>
+                  <div style="width:100%;background:var(--border);border-radius:3px 3px 0 0;height:28px;display:flex;align-items:flex-end;overflow:hidden">
+                    <div style="width:100%;height:${vP}%;background:${col};opacity:.5;border-radius:3px 3px 0 0;min-height:2px"></div>
+                  </div>
+                </div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`;
+      }).join('')}
+      <div style="display:flex;align-items:center;gap:20px;padding:10px 14px;background:var(--surface2);border-top:1px solid var(--border);font-size:11px;color:var(--text2)">
+        <span style="font-weight:600">Legend:</span>
+        <span>Full = Calls</span><span>75% = Sales</span><span>50% = Conv %</span>
+        <span style="margin-left:auto;color:var(--text3)">Bar height = relative max within each period</span>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('agent-compare-content').innerHTML=html;
+}
+
+// ─── Agent global date ───────────────────────────
+function setAgentGlobalDate(mode,el){
+  document.querySelectorAll('#agent-global-date-group .date-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+}
+function refreshData(){
+  generateData();
+  filteredAgencies=[...agencies];
+  renderAgencyKPIs();
+  renderAgencyTable();
+  renderBarChart();
+  renderTrendChart();
+  if(document.getElementById('compare-toggle').checked) renderCompare();
+}
+
+function toggleDark(){document.body.classList.toggle('dark');}
+
+function exportCSV(){
+  const rows=[['Agency','Agents','Active','Calls','Connected','Missed','Dropped','Sales','Conv%','Prod%','Login Hrs']];
+  agencies.forEach(a=>rows.push([a.name,a.totalAgents,a.activeAgents,a.calls,a.connected,a.missed,a.dropped,a.sales,a.conversion,a.productivity,a.loginHours]));
+  dl(rows,'agency-insights.csv');
+}
+function exportAgentCSV(){
+  if(!currentAgencyId)return;
+  const rows=[['Agent','Status','Calls','Connected','Missed','Dropped','Sales','Conv%','Prod%','Login Hrs','Break Hrs','Campaign']];
+  agentsMap[currentAgencyId].forEach(a=>rows.push([a.agentName,a.status,a.calls,a.connected,a.missed,a.dropped,a.sales,a.conversion,a.productivity,a.loginHours,a.breakTime,a.campaign]));
+  dl(rows,'agent-insights.csv');
+}
+function dl(rows,name){
+  const blob=new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  Object.assign(document.createElement('a'),{href:url,download:name}).click();
+}
+
+function updateClock(){
+  document.getElementById('live-clock').textContent=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+generateData();
+renderAgencyKPIs();
+renderAgencyTable();
+renderBarChart();
+renderTrendChart();
+setInterval(updateClock,1000);
+updateClock();
+
+// default custom date values
+const today=new Date();
+document.getElementById('date-to').value=today.toISOString().split('T')[0];
+const week=new Date(today);week.setDate(today.getDate()-7);
+document.getElementById('date-from').value=week.toISOString().split('T')[0];
+</script>
+</body>
+</html>
